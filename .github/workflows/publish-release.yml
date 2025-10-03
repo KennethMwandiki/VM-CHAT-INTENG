@@ -39,4 +39,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/one-click-publish.yml/dispatches \
-            -d '{"ref":"main","inputs":{"publish_reason":"manual-release"}}'
+            -d '{"ref":"main"}'
