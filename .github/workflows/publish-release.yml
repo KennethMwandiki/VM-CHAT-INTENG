@@ -1,5 +1,9 @@
 name: Publish Release and Trigger One-Click
 
+permissions:
+  contents: read
+  actions: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -26,13 +30,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Trigger One-Click Publish
-        # use a widely-supported stable tag
-        uses: peter-evans/workflow-dispatch@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          workflow: 'one-click-publish.yml'
-          ref: main
-          inputs: |
-            publish_reason: 'manual-release'
+      - name: Trigger One-Click Publish (API)
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          echo "Dispatching one-click publish workflow via REST API"
+          curl -s -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/one-click-publish.yml/dispatches \
+            -d '{"ref":"main","inputs":{"publish_reason":"manual-release"}}'
