@@ -27,7 +27,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger One-Click Publish
-        uses: peter-evans/workflow-dispatch@v2
+        # use a widely-supported stable tag
+        uses: peter-evans/workflow-dispatch@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
