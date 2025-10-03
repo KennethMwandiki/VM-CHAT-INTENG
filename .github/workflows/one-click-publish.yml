@@ -1,0 +1,101 @@
+name: One-Click Publish to All Stores
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      PUBLISH_WEB: 'true'
+      PUBLISH_ANDROID: 'true'
+      PUBLISH_IOS: 'true' # iOS requires macOS runners; ensure runner availability
+      PUBLISH_DESKTOP: 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build Frontend (Web)
+        shell: bash
+        run: |
+          cd frontend
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Upload Web Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: frontend/build
+
+      - name: Build Backend Docker Image
+        shell: bash
+        run: |
+          docker build -t ${{ secrets.DOCKER_REGISTRY }}/vmchat-backend:${{ github.sha }} ./backend
+
+      - name: Push Backend Image (Optional)
+        if: ${{ secrets.DOCKER_REGISTRY != '' }}
+        shell: bash
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo $DOCKER_PASSWORD | docker login ${{ secrets.DOCKER_REGISTRY }} -u $DOCKER_USERNAME --password-stdin
+          docker push ${{ secrets.DOCKER_REGISTRY }}/vmchat-backend:${{ github.sha }}
+
+      - name: Build Android Artifact
+        if: env.PUBLISH_ANDROID == 'true'
+        shell: bash
+        run: |
+          echo "Building Android (placeholder)"
+
+      - name: Publish Web (Vercel)
+        if: env.PUBLISH_WEB == 'true'
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx vercel --prod --token $VERCEL_TOKEN
+
+      - name: Publish Android (Google Play via Fastlane)
+        if: env.PUBLISH_ANDROID == 'true'
+        uses: maierj/fastlane-action@v3.0.0
+        with:
+          lane: android release
+        env:
+          GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+
+      - name: Publish iOS (Fastlane)
+        if: env.PUBLISH_IOS == 'true'
+        uses: maierj/fastlane-action@v3.0.0
+        with:
+          lane: ios release
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+
+      - name: Notify Success
+        run: echo "One-click publish workflow completed."
+
+      - name: Notify Slack (optional)
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: repo,commit,author
+          custom_payload: |
+            {
+              "text": "One-Click Publish completed for <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>",
+              "attachments": [
+                {"text": "Build and publish finished - check logs for details."}
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
