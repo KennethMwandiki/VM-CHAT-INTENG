@@ -66,3 +66,43 @@ gh workflow run publish-release.yml --repo OWNER/REPO --field tag=v1.0.0 --field
 ```
 
 This will create an optional GitHub release and then trigger the `one-click-publish.yml` workflow.
+
+## Verifying Repository Secrets
+Before running the publish workflows, ensure required secrets are present in the repository Settings → Secrets.
+
+Required secrets:
+- `DOCKER_REGISTRY`, `DOCKER_USERNAME`, `DOCKER_PASSWORD`
+- `VERCEL_TOKEN`
+- `GOOGLE_PLAY_JSON_KEY`
+- `APP_STORE_CONNECT_API_KEY`
+- `SLACK_WEBHOOK_URL` (optional)
+
+You can check secrets programmatically after the repository is created using the helper scripts in `scripts/`.
+
+Bash (Linux/macOS/WSL):
+```bash
+GITHUB_TOKEN=<your_pat> ./scripts/check-secrets.sh OWNER REPO
+```
+
+PowerShell (Windows):
+```powershell
+$env:GITHUB_TOKEN = "<your_pat>"
+.\scripts\check-secrets.ps1 -Owner OWNER -Repo REPO
+```
+
+If any secrets are missing, add them in GitHub: Settings → Secrets → Actions → New repository secret.
+
+## Repository management and security
+
+1. Publish platform & CI secrets
+	- Use the helper script `scripts/publish-platform-secrets.sh` (bash) or `scripts/publish-platform-secrets.ps1` (PowerShell) to upload secrets to this repository via `gh secret set`.
+	- You will still need to provide service account JSON files or private key files for Play Store and App Store Connect when prompted by the script.
+
+2. Branch protection and merge control
+	- This repo includes `scripts/setup-branch-protection.sh` and `scripts/setup-branch-protection.ps1` which call the GitHub API to set recommended protection rules on `main` (require PR reviews, require status checks `build`, `lint`, `tests`, and enforce code owner reviews).
+	- Run the relevant script with: `scripts/setup-branch-protection.sh owner/repo` or the PowerShell equivalent.
+	- A `.github/CODEOWNERS` file is included to ensure code owner review is required for critical areas (backend, infra, CI workflows).
+
+3. CI required checks
+	- After setting up branch protection, go to repository settings -> Branches and specify the exact status check names from the workflows (for example: `build`, `lint`, `tests`). Make sure workflows expose these names via job names.
+
