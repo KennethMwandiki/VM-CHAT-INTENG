@@ -1,3 +1,25 @@
+# Backend — API & Integrations
+
+About
+-----
+
+The backend is a Node.js service that exposes REST endpoints for starting streams, session/chat management, and health checks. It integrates with third-party streaming providers and handles authentication, token management, and provider-specific actions.
+
+Quick start (local)
+-------------------
+
+1. Install dependencies:
+   ```sh
+   cd backend
+   yarn install
+   ```
+2. Start the service:
+   ```sh
+   node server.js
+   ```
+
+3. Environment variables:
+   - `AGORA_APP_ID`, `AGORA_CUSTOMER_SECRET`, `MONGO_URI`, etc. See `.env.example` in `/backend`.
 # Backend Service (Node.js)
 
 ## Build & Run with Docker

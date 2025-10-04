@@ -29,6 +29,11 @@
    kubectl get svc
    ```
 
+## About
+-----
+
+Broadcast to all major platforms at once — simple, fast, and reliable live streaming. Use these Kubernetes manifests to deploy the containerized frontend, backend, and MongoDB for production-grade live streaming with failover and scale.
+
 4. **Access the services:**
    - **Backend:** NodePort (default: 30080 on your node IP)
    - **Frontend:** LoadBalancer (external IP, or `minikube service frontend-service` for Minikube)

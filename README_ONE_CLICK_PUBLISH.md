@@ -92,6 +92,11 @@ $env:GITHUB_TOKEN = "<your_pat>"
 
 If any secrets are missing, add them in GitHub: Settings → Secrets → Actions → New repository secret.
 
+About
+-----
+
+Broadcast to all major platforms at once — simple, fast, and reliable live streaming. This repo contains the one-click CI tooling and platform code to start and manage multi-platform live broadcasts with low latency, session chat, and centralized governance.
+
 ## Repository management and security
 
 1. Publish platform & CI secrets
