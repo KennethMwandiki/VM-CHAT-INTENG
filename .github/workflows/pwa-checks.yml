@@ -1,0 +1,23 @@
+name: PWA manifest checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies (none required)
+        run: echo "No dependencies to install"
+
+      - name: Run manifest validator
+        run: node ./scripts/validate-manifest.js

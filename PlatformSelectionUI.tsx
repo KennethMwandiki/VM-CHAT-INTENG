@@ -52,3 +52,14 @@ const PlatformSelectionUI: React.FC<PlatformSelectionUIProps> = ({ selectedPlatf
 
 export default PlatformSelectionUI;
 export { ALL_PLATFORMS };
+
+// Register service worker when this module loads in the browser.
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then((reg) => {
+      console.log('Service worker registered from PlatformSelectionUI:', reg.scope);
+    }).catch((err) => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
