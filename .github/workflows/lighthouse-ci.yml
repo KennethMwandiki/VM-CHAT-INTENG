@@ -28,6 +28,7 @@ jobs:
           npx http-server public -p 8080 &
           sleep 2
 
-      - name: Run LHCI autorun
+      - name: Run LHCI autorun (with assertions)
         run: |
+          # LHCI will read .lighthouserc.json and fail the job if assertions (e.g. PWA score) are not met
           npx lhci autorun --upload.target=temporary-public-storage --url=http://localhost:8080

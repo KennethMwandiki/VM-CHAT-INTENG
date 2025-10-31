@@ -1,4 +1,5 @@
 import React from "react";
+import './Branding CSS Styling.css';
 
 // List of all major social/live platforms
 const ALL_PLATFORMS = [
@@ -32,11 +33,11 @@ const PlatformSelectionUI: React.FC<PlatformSelectionUIProps> = ({ selectedPlatf
   };
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div className="platform-selection">
       <h3>Select Platforms:</h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+      <div className="platform-grid">
         {ALL_PLATFORMS.map(platform => (
-          <label key={platform} style={{ minWidth: 120 }}>
+          <label key={platform} className="platform-item">
             <input
               type="checkbox"
               checked={selectedPlatforms.includes(platform)}

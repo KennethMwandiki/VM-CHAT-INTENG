@@ -57,3 +57,9 @@
   font-family: var(--font-body);
   line-height: var(--line-height-body);
 }
+
+.platform-selection { margin-bottom: 16px; }
+.platform-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.platform-item { min-width: 120px; }
+
+.btn-pwa { background: var(--color-accent); color: white; padding: 10px 20px; border-radius: 8px; border: none; }
