@@ -45,7 +45,16 @@ const CUSTOMER_SECRET = ""; // Not provided, leave blank or set if needed
 const CHAT_ORG_NAME = "411111872";
 const CHAT_APP_NAME = "1555202";
 // Add more chat service config as needed
-const DB_PATH = "./sessions.db";
+const DB_PATH = "/tmp/sessions.db"; // Use /tmp for Vercel's writable filesystem
+
+const express = require("express");
+const axios = require("axios");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const session = require("express-session");
+const SQLiteStore = require("connect-sqlite3")(session);
+const sqlite3 = require("sqlite3").verbose();
+const { RtcTokenBuilder, RtcRole } = require("agora-token");
 
 const app = express();
 
@@ -67,7 +76,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 
 app.use(
   session({
-    store: new SQLiteStore({ db: "sessions.db", dir: "./" }),
+    store: new SQLiteStore({ db: "sessions.db", dir: "/tmp" }),
     secret: "a very secret key", // Replace with a secret from env vars in production
     resave: false,
     saveUninitialized: false,
@@ -315,6 +324,5 @@ app.post("/api/webhooks/agora", express.json({ type: '*/*' }), (req, res) => {
 });
 
 // --- Start the Server ---
-const server = app.listen(3000, () => console.log("Backend running at http://localhost:3000"));
-
-module.exports = { app, server };
+// Vercel will handle the listening part, so we just export the app
+module.exports = app;

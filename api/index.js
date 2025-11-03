@@ -1,40 +1,3 @@
-// Health Check Endpoint for Deployment Readiness
-app.get("/healthz", async (req, res) => {
-  // Check Agora and Chat API keys/configs
-  let agoraStatus = "ok";
-  let chatStatus = "ok";
-  try {
-    // Try a simple Agora API call (e.g., get app info)
-    await axios.get(`${AGORA_API_BASE_URL}/management/apps/${AGORA_APP_ID}`, {
-      auth: { username: CUSTOMER_KEY, password: CUSTOMER_SECRET },
-    });
-  } catch (e) {
-    agoraStatus = "fail";
-  }
-  // Optionally, check chat service status here if API available
-  res.json({
-    status: "ok",
-    agora: agoraStatus,
-    chat: chatStatus,
-    appId: AGORA_APP_ID,
-    appKey: CUSTOMER_KEY,
-    orgName: CHAT_ORG_NAME,
-    appName: CHAT_APP_NAME,
-  });
-});
-const express = require("express");
-const axios = require("axios");
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const session = require("express-session");
-const SQLiteStore = require("connect-sqlite3")(session);
-const sqlite3 = require("sqlite3").verbose();
-const { RtcTokenBuilder, RtcRole } = require("agora-token");
-
-const app = express();
-app.use(passport.initialize());
-
-
 // Agora Configurations
 const AGORA_APP_ID = "89d780c544f44ee38c36f54a108913a8";
 const AGORA_API_BASE_URL = "https://a41.chat.agora.io";
@@ -45,9 +8,16 @@ const CUSTOMER_SECRET = ""; // Not provided, leave blank or set if needed
 const CHAT_ORG_NAME = "411111872";
 const CHAT_APP_NAME = "1555202";
 // Add more chat service config as needed
-const DB_PATH = "./sessions.db";
+const DB_PATH = "/tmp/sessions.db"; // Use /tmp for Vercel's writable filesystem.
 
-const app = express();
+const express = require("express");
+const axios = require("axios");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const session = require("express-session");
+const SQLiteStore = require("connect-sqlite3")(session);
+const sqlite3 = require("sqlite3").verbose();
+const { RtcTokenBuilder, RtcRole } = require("agora-token");
 
 // --- Database and Session Setup ---
 const db = new sqlite3.Database(DB_PATH, (err) => {
@@ -65,9 +35,11 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
   }
 });
 
+const app = express();
+
 app.use(
   session({
-    store: new SQLiteStore({ db: "sessions.db", dir: "./" }),
+    store: new SQLiteStore({ db: "sessions.db", dir: "/tmp" }), // Point to the temp directory
     secret: "a very secret key", // Replace with a secret from env vars in production
     resave: false,
     saveUninitialized: false,
@@ -162,28 +134,12 @@ app.get("/generate-token/:channelName", ensureAuthenticated, async (req, res) =>
   const privilegeExpires = Math.floor(Date.now() / 1000) + 3600; // 1-hour token validity
 
   try {
-    const response = await axios.post(
-      `${AGORA_API_BASE_URL}/${AGORA_APP_ID}/channels/${channelName}/tokens`,
-      {
-        uid: 0,
-        privilegeExpiredTs: privilegeExpires,
-      },
-      {
-        auth: {
-          username: CUSTOMER_KEY,
-          password: CUSTOMER_SECRET,
-        },
-      }
-    );
-
-    res.json({ token: response.data.token });
     if (!AGORA_APP_ID || !CUSTOMER_SECRET) {
         return res.status(500).json({ error: "Agora App ID or App Certificate is not configured." });
     }
     const token = RtcTokenBuilder.buildTokenWithUid(AGORA_APP_ID, CUSTOMER_SECRET, channelName, uid, role, privilegeExpires);
     res.json({ token });
   } catch (error) {
-    res.status(500).json({ error: "Failed to generate token" });
     console.error("Token generation error:", error);
     res.status(500).json({ error: "Failed to generate token", details: error.message });
   }
@@ -218,11 +174,6 @@ streamMetricsProducer.init();
 
 app.get("/stream-metrics", ensureAuthenticated, async (req, res) => {
   try {
-    const response = await axios.get(`${AGORA_API_BASE_URL}/${AGORA_APP_ID}/analytics`, {
-      auth: { username: CUSTOMER_KEY, password: CUSTOMER_SECRET },
-    });
-
-    const { streams } = response.data;
     // Using the in-memory producer for more realistic data
     const streams = streamMetricsProducer.streams;
     res.json({
@@ -230,7 +181,6 @@ app.get("/stream-metrics", ensureAuthenticated, async (req, res) => {
       metrics: streams.map((stream) => ({
         streamId: stream.streamId,
         platforms: stream.platformsList,
-        quality: `${stream.streamQuality}%`,
         quality: `${stream.streamQuality.toFixed(2)}%`,
         viewers: stream.viewerCount,
         duration: stream.durationSec,
@@ -240,8 +190,6 @@ app.get("/stream-metrics", ensureAuthenticated, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch stream metrics" });
   }
 });
-
-// Start the Server
 
 // API: Start Streaming to Multiple Platforms
 app.post("/api/stream/start", express.json(), ensureAuthenticated, async (req, res) => {
@@ -315,6 +263,5 @@ app.post("/api/webhooks/agora", express.json({ type: '*/*' }), (req, res) => {
 });
 
 // --- Start the Server ---
-const server = app.listen(3000, () => console.log("Backend running at http://localhost:3000"));
-
-module.exports = { app, server };
+// Vercel will handle the listening part, so we just export the app
+module.exports = app;
