@@ -2,11 +2,34 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import PlatformSelectionUI from '../PlatformSelectionUI';
 
+const initialPlatforms = [
+  "YouTube",
+  "Facebook",
+  "Twitch",
+  "Instagram",
+  "LinkedIn",
+  "Twitter (X)",
+  "WeChat",
+  "Kick",
+  "Trovo",
+  "DLive",
+  "Vimeo",
+  "TikTok",
+  "Custom RTMP"
+];
+
 const App: React.FC = () => {
   const [selected, setSelected] = useState<string[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>(initialPlatforms);
+
   return (
     <div>
-      <PlatformSelectionUI selectedPlatforms={selected} setSelectedPlatforms={setSelected} />
+      <PlatformSelectionUI
+        allPlatforms={platforms}
+        setAllPlatforms={setPlatforms}
+        selectedPlatforms={selected}
+        setSelectedPlatforms={setSelected}
+      />
     </div>
   );
 };
