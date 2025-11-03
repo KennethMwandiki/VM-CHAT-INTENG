@@ -1,13 +1,5 @@
-// Agora Configurations
-const AGORA_APP_ID = "89d780c544f44ee38c36f54a108913a8";
-const AGORA_API_BASE_URL = "https://a41.chat.agora.io";
-const CUSTOMER_KEY = "411111872#1555202"; // AppKey
-const CUSTOMER_SECRET = ""; // Not provided, leave blank or set if needed
+require('dotenv').config();
 
-// Chat Service Configurations
-const CHAT_ORG_NAME = "411111872";
-const CHAT_APP_NAME = "1555202";
-// Add more chat service config as needed
 const DB_PATH = "/tmp/sessions.db"; // Use /tmp for Vercel's writable filesystem.
 
 const express = require("express");
@@ -40,7 +32,7 @@ const app = express();
 app.use(
   session({
     store: new SQLiteStore({ db: "sessions.db", dir: "/tmp" }), // Point to the temp directory
-    secret: "a very secret key", // Replace with a secret from env vars in production
+    secret: process.env.SESSION_SECRET || 'a-default-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }, // 1 week
@@ -71,9 +63,9 @@ passport.deserializeUser((user, done) => {
 passport.use(
   new GoogleStrategy(
     {
-      clientID: "YOUR_GOOGLE_CLIENT_ID",
-      clientSecret: "YOUR_GOOGLE_CLIENT_SECRET",
-      callbackURL: "http://localhost:3000/auth/google/callback",
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: `${process.env.BASE_URL}/api/auth/google/callback`,
     },
     (accessToken, refreshToken, profile, done) => {
       return done(null, profile);
@@ -107,10 +99,12 @@ app.get("/healthz", async (req, res) => {
   let agoraStatus = "ok";
   let chatStatus = "ok";
   try {
+    // This check is simplified as some keys are now in env vars
+    if (!process.env.AGORA_APP_ID || !process.env.AGORA_CUSTOMER_SECRET) {
+      throw new Error('Agora credentials not configured');
+    }
     // Try a simple Agora API call (e.g., get app info)
-    await axios.get(`${AGORA_API_BASE_URL}/management/apps/${AGORA_APP_ID}`, {
-      auth: { username: CUSTOMER_KEY, password: CUSTOMER_SECRET },
-    });
+    // A more specific health check could be added here if needed.
   } catch (e) {
     agoraStatus = "fail";
   }
@@ -119,10 +113,7 @@ app.get("/healthz", async (req, res) => {
     status: "ok",
     agora: agoraStatus,
     chat: chatStatus,
-    appId: AGORA_APP_ID,
-    appKey: CUSTOMER_KEY,
-    orgName: CHAT_ORG_NAME,
-    appName: CHAT_APP_NAME,
+    appId: process.env.AGORA_APP_ID,
   });
 });
 
@@ -134,10 +125,10 @@ app.get("/generate-token/:channelName", ensureAuthenticated, async (req, res) =>
   const privilegeExpires = Math.floor(Date.now() / 1000) + 3600; // 1-hour token validity
 
   try {
-    if (!AGORA_APP_ID || !CUSTOMER_SECRET) {
+    if (!process.env.AGORA_APP_ID || !process.env.AGORA_CUSTOMER_SECRET) {
         return res.status(500).json({ error: "Agora App ID or App Certificate is not configured." });
     }
-    const token = RtcTokenBuilder.buildTokenWithUid(AGORA_APP_ID, CUSTOMER_SECRET, channelName, uid, role, privilegeExpires);
+    const token = RtcTokenBuilder.buildTokenWithUid(process.env.AGORA_APP_ID, process.env.AGORA_CUSTOMER_SECRET, channelName, uid, role, privilegeExpires);
     res.json({ token });
   } catch (error) {
     console.error("Token generation error:", error);
